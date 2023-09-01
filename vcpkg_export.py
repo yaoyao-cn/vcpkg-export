@@ -5,6 +5,7 @@ import argparse
 
 g_curDir = os.path.dirname(os.path.realpath(__file__))
 g_vcpkg_root = ''
+g_vcpkg_executable = ''
 
 def DeleteOldExports():
     pass
@@ -14,6 +15,7 @@ def DoExport(vcpkg_installed_dir):
     print('vcpkg_installed_dir: %s'%vcpkg_installed_dir)
     print('g_curDir: %s'%g_curDir)
     print('g_vcpkg_root: %s'%g_vcpkg_root)
+    print('g_vcpkg_executable: %s'%g_vcpkg_executable)
 
     # copy recursive from vcpkg_installed_dir to ./vcpkg-export-yyyyMMdd-hhmmss/installed
     timeStr = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
@@ -36,8 +38,8 @@ def CleanupExport(exportDir):
 def PatchExports(exportDir):
     print('PatchExports...')
     print('patching %s'%exportDir)
-    print('copy vcpkg.exe...')
-    shutil.copy(os.path.join(g_vcpkg_root, 'vcpkg.exe'), os.path.join(exportDir, 'vcpkg.exe'))
+    print('copy %s...'%g_vcpkg_executable)
+    shutil.copy(os.path.join(g_vcpkg_root, g_vcpkg_executable), os.path.join(exportDir, g_vcpkg_executable))
     print('copy triplets...')
     shutil.copytree(os.path.join(g_vcpkg_root, 'triplets'), os.path.join(exportDir, 'triplets'))
 
@@ -74,7 +76,7 @@ def MakePkg(vcpkg_installed_dir):
     ZipExports(exportDir)
     print('----------------------------------------')
 
-def ArgsValid(args):
+def ParseArgs(args):
     # check --vcpkg-installed-dir
     if args.vcpkg_installed_dir is None:
         print('vcpkg installed dir is not specified')
@@ -91,10 +93,15 @@ def ArgsValid(args):
         print('vcpkg root dir does not exist')
         return False
     
-    # check vcpkg.exe
-    vcpkg_exe = os.path.join(args.vcpkg_root, 'vcpkg.exe')
-    if not os.path.exists(vcpkg_exe):
-        print('vcpkg.exe does not exist, please run bootstrap-vcpkg.bat in vcpkg root dir: %s'%args.vcpkg_root)
+    # set g_vcpkg_executable name
+    global g_vcpkg_executable
+    if os.path.exists(os.path.join(args.vcpkg_root, 'vcpkg')):
+        g_vcpkg_executable = 'vcpkg'
+    else:
+        g_vcpkg_executable = 'vcpkg.exe'
+
+    if not os.path.exists(os.path.join(args.vcpkg_root, g_vcpkg_executable)):
+        print(f'{g_vcpkg_executable} does not exist, please run bootstrap-vcpkg.bat in vcpkg root dir: {args.vcpkg_root}')
         return False
     
     # set global vcpkg_root
@@ -114,8 +121,8 @@ if __name__ == '__main__':
     # parse args
     args = parser.parse_args()
 
-    # check args
-    if not ArgsValid(args):
+    # parse args
+    if not ParseArgs(args):
         exit(1)
 
     # make package
