@@ -20,7 +20,15 @@ def DoExport(vcpkg_installed_dir):
     # copy recursive from vcpkg_installed_dir to ./vcpkg-export-yyyyMMdd-hhmmss/installed
     timeStr = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
     exportDir = os.path.join(g_curDir, 'vcpkg-export-' + timeStr)
-    
+    # add triplets suffix to exportDir, triplets can be found in vcpkg installed dir as a sub folder
+    # subfolder name start with x64- or x86- or arm64- or arm-
+    triplet_prefix = ['x64-', 'x86-', 'arm64-', 'arm-']
+    for triplet in os.listdir(vcpkg_installed_dir):
+        if os.path.isdir(os.path.join(vcpkg_installed_dir, triplet)):
+            for prefix in triplet_prefix:
+                if triplet.startswith(prefix):
+                    exportDir += '_' + triplet
+
     print('copy from %s to %s'%(vcpkg_installed_dir, exportDir))
     shutil.copytree(vcpkg_installed_dir, os.path.join(exportDir, 'installed'))
 
